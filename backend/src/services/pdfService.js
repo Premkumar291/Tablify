@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 export const processPdf = (fileBuffer, format) => {
     return new Promise((resolve, reject) => {
         const pythonScript = path.join(__dirname, '../python/pdf_processor.py');
-        const pythonProcess = spawn('python', [pythonScript, '--format', format]);
+        const pythonProcess = spawn('python3', [pythonScript, '--format', format]);
 
         // Feed Buffer
         pythonProcess.stdin.write(fileBuffer);
