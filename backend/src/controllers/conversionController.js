@@ -47,6 +47,11 @@ export const convertPdf = async (req, res) => {
 
     } catch (error) {
         console.error('Conversion Controller Error:', error.message);
+
+        if (error.message.includes('No tables found')) {
+            return res.status(422).json({ error: error.message });
+        }
+
         res.status(500).json({ error: error.message || 'Conversion failed' });
     }
 };

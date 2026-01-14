@@ -23,10 +23,12 @@ export const processPdf = (fileBuffer, format) => {
 
         pythonProcess.stderr.on('data', (data) => {
             errorString += data.toString();
+            console.error('[Python Error Details]:', data.toString());
         });
 
         pythonProcess.on('close', (code) => {
             if (code !== 0) {
+                console.error(`Python script exited with code ${code}. Stderr: ${errorString}`);
                 return reject(new Error(`Python Script Error: ${errorString}`));
             }
 

@@ -12,8 +12,8 @@ export const enforceLimits = async (req, res, next) => {
             status: 'SUCCESS'
         });
 
-        // 1. FREE Tier: Max 10 conversions lifetime
-        if (user.plan === 'FREE' && conversionCount >= 10) {
+        // 1. FREE Tier: Max 1000 conversions lifetime (Elevated for Development)
+        if (user.plan === 'FREE' && conversionCount >= 1000) {
             return res.status(403).json({
                 error: 'LIMIT_EXCEEDED',
                 message: 'Free tier limit reached (10 conversions). Upgrade required.'
