@@ -130,8 +130,27 @@ def extract_tables_from_pdf(pdf_bytes):
                     
     return tables
 
-def process_pdf(data, output_format):
+def process_pdf(data, output_format, mode='tables'):
     try:
+        if mode == 'text':
+             # Direct Text Extraction
+             with pdfplumber.open(io.BytesIO(data)) as pdf:
+                text_content = []
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        text_content.append(text)
+                
+                full_text = "\n\n".join(text_content)
+                
+                return {
+                    "file_content": full_text, 
+                    "content_type": "text/plain",
+                    "filename": "output.txt",
+                    "is_base64": False
+                }
+
+        # Table Extraction Mode (Default)
         dfs = extract_tables_from_pdf(data)
         
         if not dfs:
@@ -210,6 +229,7 @@ def process_pdf(data, output_format):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--format', default='json')
+    parser.add_argument('--mode', default='tables')
     args = parser.parse_args()
 
     try:
@@ -219,7 +239,7 @@ if __name__ == "__main__":
             raise ValueError("No input data")
 
         # Process
-        result = process_pdf(input_data, args.format)
+        result = process_pdf(input_data, args.format, args.mode)
         
         # Output JSON to stdout
         print(json.dumps(result))

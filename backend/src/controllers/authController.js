@@ -82,8 +82,8 @@ export const generateApiKey = async (req, res) => {
         const user = await User.findById(req.user._id);
         const count = await ApiKey.countDocuments({ userId: req.user._id, revoked: false });
 
-        if (user.plan === 'FREE' && count >= 5) {
-            return res.status(403).json({ error: 'Limit reached: You can only have 5 active API keys on the Free plan.' });
+        if (user.plan === 'FREE' && count >= 3) {
+            return res.status(403).json({ error: 'Limit reached: You can only have 3 active API keys on the Free plan.' });
         }
 
         const rawKey = 'sk_' + crypto.randomBytes(24).toString('hex');
@@ -96,7 +96,7 @@ export const generateApiKey = async (req, res) => {
             name: name || 'My API Key'
         });
 
-        res.status(201).json({ apiKey: rawKey, message: 'Store this key safely. It will not be shown again.' });
+        res.status(201).json({ apiKey: rawKey, key: apiKey, message: 'Store this key safely. It will not be shown again.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -106,6 +106,18 @@ export const getApiKeys = async (req, res) => {
     try {
         const keys = await ApiKey.find({ userId: req.user._id }).select('-keyHash');
         res.json(keys);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export const deleteApiKey = async (req, res) => {
+    try {
+        const key = await ApiKey.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        if (!key) {
+            return res.status(404).json({ error: 'API Key not found or not authorized' });
+        }
+        res.json({ message: 'API Key deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

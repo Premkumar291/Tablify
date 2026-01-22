@@ -65,13 +65,13 @@ console.log(response.data);`
     return (
         <div className="max-w-4xl mx-auto space-y-12">
             <header className="space-y-4">
-                <h1 className="text-4xl font-bold text-white">Integration Guide</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-white">Integration Guide</h1>
                 <p className="text-lg text-slate-400">
                     Follow this step-by-step guide to integrate Tablify into your application.
                 </p>
             </header>
 
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
                 {/* Step 1 */}
                 <div className="space-y-3 p-4 rounded-xl bg-slate-900/50 border border-slate-800/50">
                     <div className="w-10 h-10 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-lg border border-brand-500/30">1</div>
@@ -82,7 +82,7 @@ console.log(response.data);`
                 <div className="space-y-3 p-4 rounded-xl bg-slate-900/50 border border-slate-800/50">
                     <div className="w-10 h-10 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-lg border border-brand-500/30">2</div>
                     <h3 className="text-xl font-semibold text-white">Prepare Request</h3>
-                    <p className="text-slate-400 text-sm">Construct a POST request to <code className="text-xs bg-slate-950 px-1 py-0.5 rounded border border-slate-800">/api/convert</code>. Include your PDF file and the <code className="text-xs bg-slate-950 px-1 py-0.5 rounded border border-slate-800">x-api-key</code> header.</p>
+                    <p className="text-slate-400 text-sm">Construct a POST request to <code className="text-xs bg-slate-950 px-1 py-0.5 rounded border border-slate-800 break-all">/api/convert</code>. Include your PDF file and the <code className="text-xs bg-slate-950 px-1 py-0.5 rounded border border-slate-800 break-keep">x-api-key</code> header.</p>
                 </div>
                 {/* Step 3 */}
                 <div className="space-y-3 p-4 rounded-xl bg-slate-900/50 border border-slate-800/50">
@@ -110,15 +110,14 @@ console.log(response.data);`
 
             {/* Endpoint Section */}
             <section className="space-y-6">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-white flex flex-wrap items-center gap-2">
                     <Terminal className="w-6 h-6 text-blue-400" />
                     Convert PDF Endpoint
                 </h2>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <span className="bg-green-500/10 text-green-400 font-bold px-3 py-1 rounded text-sm border border-green-500/20">POST</span>
-                    <code className="text-white bg-slate-800 px-3 py-1 rounded hidden md:inline">{convertEndpoint}</code>
-                    <code className="text-white bg-slate-800 px-3 py-1 rounded md:hidden text-xs">{convertEndpoint.replace(window.location.origin, '')}</code>
+                    <code className="text-white bg-slate-800 px-3 py-1 rounded break-all">{convertEndpoint}</code>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
@@ -126,13 +125,13 @@ console.log(response.data);`
                         <h3 className="font-semibold text-white">Request Parameters (Multipart/Form-Data)</h3>
                     </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm whitespace-nowrap md:whitespace-normal">
+                        <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px] md:whitespace-normal">
                             <thead className="bg-slate-950 text-slate-400 font-medium">
                                 <tr>
-                                    <th className="p-4">Key</th>
-                                    <th className="p-4">Type</th>
-                                    <th className="p-4">Required</th>
-                                    <th className="p-4 min-w-[200px]">Description</th>
+                                    <th className="p-4 w-1/4">Key</th>
+                                    <th className="p-4 w-1/6">Type</th>
+                                    <th className="p-4 w-1/6">Required</th>
+                                    <th className="p-4">Description</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800 text-slate-300">

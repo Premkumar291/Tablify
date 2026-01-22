@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { cn, formatBytes } from '../../utils/format';
-import { UploadCloud, File, X, Check, Loader2, AlertCircle } from 'lucide-react';
+import { UploadCloud, File, X, Check, Loader2, AlertCircle, Table, FileText } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { convertPdf } from '../../api/convert.api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Convert = () => {
     const [file, setFile] = useState(null);
     const [format, setFormat] = useState('json');
+    const [mode, setMode] = useState('tables');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -38,6 +39,7 @@ const Convert = () => {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('format', format);
+            formData.append('mode', mode);
 
             const response = await convertPdf(formData);
 
@@ -48,11 +50,11 @@ const Convert = () => {
                     const json = JSON.parse(text);
                     setJsonData(json);
                 } catch (e) {
-                    console.error("Failed to parse JSON for preview", e);
+                    // Silent error
                 }
             } else if (format === 'text') {
                 const text = await response.data.text();
-                console.log('Received text content:', text);
+                // console.log('Received text content:', text);
                 setJsonData(text);
             }
 
@@ -70,7 +72,7 @@ const Convert = () => {
 
             setSuccess(true);
         } catch (err) {
-            console.error(err);
+            // console.error(err);
 
             let errorMessage = err.message || 'Conversion failed';
 
@@ -83,7 +85,6 @@ const Convert = () => {
                         errorMessage = json.error || errorMessage;
                     } catch (e) {
                         // Fallback if parsing fails
-                        console.error("Failed to parse blob error response", e);
                     }
                 } else if (err.response.data.error) {
                     errorMessage = err.response.data.error;
@@ -93,7 +94,7 @@ const Convert = () => {
             if (errorMessage === 'LIMIT_EXCEEDED') {
                 setError('Your free limit exceed. Please upgrade to continue.');
             } else if (errorMessage && (errorMessage.includes('No tables found') || errorMessage.includes('No tables found in PDF'))) {
-                setError('No tables found in the uploaded PDF.');
+                setError('No tables found in the uploaded PDF. Try using "Plain Text" mode.');
             } else {
                 setError(errorMessage);
             }
@@ -111,8 +112,22 @@ const Convert = () => {
     };
 
     const handleFormatChange = (newFormat) => {
+        if (mode === 'text') return; // Cannot change format in text mode (it's always text)
         if (format === newFormat) return;
         setFormat(newFormat);
+        setSuccess(false);
+        setJsonData(null);
+        setError('');
+    };
+
+    const handleModeChange = (newMode) => {
+        if (mode === newMode) return;
+        setMode(newMode);
+        if (newMode === 'text') {
+            setFormat('text');
+        } else {
+            setFormat('json');
+        }
         setSuccess(false);
         setJsonData(null);
         setError('');
@@ -122,7 +137,11 @@ const Convert = () => {
         { id: 'json', label: 'JSON' },
         { id: 'csv', label: 'CSV' },
         { id: 'excel', label: 'Excel (XLSX)' },
-        { id: 'text', label: 'Plain Text' },
+    ];
+
+    const modes = [
+        { id: 'tables', label: 'Table Extraction', icon: Table, description: 'Extract structured tables into JSON, CSV, or Excel' },
+        { id: 'text', label: 'Plain Text', icon: FileText, description: 'Extract all text content from the document' },
     ];
 
     return (
@@ -134,20 +153,27 @@ const Convert = () => {
 
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
                 {!file ? (
-                    <div
-                        {...getRootProps()}
-                        className={cn(
-                            "border-2 border-dashed rounded-xl h-64 flex flex-col items-center justify-center cursor-pointer transition-all duration-200",
-                            isDragActive ? "border-brand-500 bg-brand-500/10" : "border-slate-700 hover:border-brand-500/50 hover:bg-slate-800/50"
-                        )}
-                    >
-                        <input {...getInputProps()} />
-                        <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
-                            <UploadCloud className="w-8 h-8 text-brand-400" />
+                    <>
+                        <div
+                            {...getRootProps()}
+                            className={cn(
+                                "border-2 border-dashed rounded-xl h-64 flex flex-col items-center justify-center cursor-pointer transition-all duration-200",
+                                isDragActive ? "border-brand-500 bg-brand-500/10" : "border-slate-700 hover:border-brand-500/50 hover:bg-slate-800/50"
+                            )}
+                        >
+                            <input {...getInputProps()} />
+                            <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                                <UploadCloud className="w-8 h-8 text-brand-400" />
+                            </div>
+                            <p className="text-lg font-medium text-white">Click to upload or drag and drop</p>
+                            <p className="text-sm text-slate-500 mt-1">PDF files only (max 10MB)</p>
                         </div>
-                        <p className="text-lg font-medium text-white">Click to upload or drag and drop</p>
-                        <p className="text-sm text-slate-500 mt-1">PDF files only (max 10MB)</p>
-                    </div>
+
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-900/20 border border-orange-800/50 text-orange-200 text-sm">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p>Note: For best results, please avoid uploading PDFs with more than 5 pages as it may affect extraction quality.</p>
+                        </div>
+                    </>
                 ) : (
                     <div className="space-y-6">
                         {/* File Card */}
@@ -167,26 +193,65 @@ const Convert = () => {
                             </button>
                         </div>
 
-                        {/* Options */}
+                        {/* Mode Selection */}
                         <div className="space-y-3">
-                            <label className="text-sm font-medium text-slate-300">Output Format</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                {formats.map((f) => (
-                                    <button
-                                        key={f.id}
-                                        onClick={() => handleFormatChange(f.id)}
-                                        className={cn(
-                                            "px-4 py-3 rounded-xl border text-sm font-medium transition-all",
-                                            format === f.id
-                                                ? "bg-brand-600 border-brand-500 text-white ring-2 ring-brand-500/30"
-                                                : "bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800"
-                                        )}
-                                    >
-                                        {f.label}
-                                    </button>
-                                ))}
+                            <label className="text-sm font-medium text-slate-300">Conversion Type</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {modes.map((m) => {
+                                    const Icon = m.icon;
+                                    return (
+                                        <button
+                                            key={m.id}
+                                            onClick={() => handleModeChange(m.id)}
+                                            className={cn(
+                                                "flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all",
+                                                mode === m.id
+                                                    ? "bg-brand-600/10 border-brand-500 text-brand-100 ring-1 ring-brand-500"
+                                                    : "bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800"
+                                            )}
+                                        >
+                                            <div className={cn("p-2 rounded-lg", mode === m.id ? "bg-brand-500 text-white" : "bg-slate-800 text-slate-500")}>
+                                                <Icon className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className={cn("text-sm font-medium", mode === m.id ? "text-white" : "text-slate-300")}>{m.label}</p>
+                                                <p className="text-xs text-slate-500">{m.description}</p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
+
+                        {/* Options (Hidden if text mode) */}
+                        <AnimatePresence>
+                            {mode === 'tables' && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="space-y-3 overflow-hidden"
+                                >
+                                    <label className="text-sm font-medium text-slate-300">Output Format</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {formats.map((f) => (
+                                            <button
+                                                key={f.id}
+                                                onClick={() => handleFormatChange(f.id)}
+                                                className={cn(
+                                                    "px-4 py-3 rounded-xl border text-sm font-medium transition-all",
+                                                    format === f.id
+                                                        ? "bg-brand-600 border-brand-500 text-white ring-2 ring-brand-500/30"
+                                                        : "bg-slate-900 border-slate-700 text-slate-400 hover:bg-slate-800"
+                                                )}
+                                            >
+                                                {f.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </ AnimatePresence>
 
                         {/* Actions */}
                         <div className="pt-4">
