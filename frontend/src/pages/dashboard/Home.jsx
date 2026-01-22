@@ -65,6 +65,27 @@ const Home = () => {
                 </div>
             </div>
 
+            {/* Product Explanation */}
+            <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
+                <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                        <FileText className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">About Tablify</h3>
+                        <p className="text-slate-400 mt-2 leading-relaxed">
+                            Tablify is an advanced PDF table extraction tool designed to convert your documents into structured data formats like JSON, CSV, and Excel.
+                        </p>
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm text-slate-300">
+                            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Automatically detect and extract tables</li>
+                            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Export to JSON, CSV, or Excel</li>
+                            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Smart parsing for complex layouts</li>
+                            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Automate via secure API</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <div className="p-6 rounded-xl bg-slate-901 border border-slate-800/50 bg-[url('/grid.svg')]">
                 <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
                 <div className="flex flex-col items-center justify-center py-12 text-slate-500 space-y-2">

@@ -8,13 +8,14 @@ export const convertPdf = async (req, res) => {
         }
 
         const format = req.body.format || 'json';
+        const mode = req.body.mode || 'tables';
         const allowedFormats = ['json', 'csv', 'excel', 'text'];
         if (!allowedFormats.includes(format)) {
             return res.status(400).json({ error: 'Invalid format. Allowed: ' + allowedFormats.join(', ') });
         }
 
         // Call Service
-        const result = await processPdf(req.file.buffer, format);
+        const result = await processPdf(req.file.buffer, format, mode);
 
         // Log Usage
         await UsageLog.create({
@@ -25,6 +26,7 @@ export const convertPdf = async (req, res) => {
             meta: {
                 fileSize: req.file.size,
                 format: format,
+                mode: mode,
                 fileName: req.file.originalname
             }
         });

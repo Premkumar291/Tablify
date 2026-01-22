@@ -5,10 +5,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const processPdf = (fileBuffer, format) => {
+export const processPdf = (fileBuffer, format, mode = 'tables') => {
     return new Promise((resolve, reject) => {
         const pythonScript = path.join(__dirname, '../python/pdf_processor.py');
-        const pythonProcess = spawn('python3', [pythonScript, '--format', format]);
+        const pythonProcess = spawn('python3', [pythonScript, '--format', format, '--mode', mode]);
 
         // Feed Buffer
         pythonProcess.stdin.write(fileBuffer);

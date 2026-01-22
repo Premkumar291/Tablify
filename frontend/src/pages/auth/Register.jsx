@@ -4,12 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Register = () => {
     const { register } = useAuth();
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -61,12 +63,21 @@ const Register = () => {
                 />
                 <Input
                     label="Password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
+                    rightElement={
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="focus:outline-none hover:text-white transition-colors"
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    }
                 />
                 <Button
                     type="submit"
