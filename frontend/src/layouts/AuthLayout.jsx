@@ -24,7 +24,7 @@ const AuthLayout = () => {
                             Transform Your <span className="text-brand-400">PDF Data</span> Instantly.
                         </h1>
                         <p className="text-xl text-slate-300">
-                            Extract tables, lists, and structured data from PDFs into Excel, JSON, and CSV with 99% accuracy.
+                            Extract tables, lists, and structured data from PDFs into Excel, JSON, and CSV with 93% accuracy.
                         </p>
                     </motion.div>
                 </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -8,6 +8,7 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
     const { login } = useAuth();
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +21,7 @@ const Login = () => {
         setError('');
         try {
             await login(email, password);
+            navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || 'Login failed');
         } finally {

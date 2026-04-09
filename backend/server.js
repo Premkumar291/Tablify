@@ -3,7 +3,12 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './src/config/db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import Routes
 import authRoutes from './src/routes/authRoutes.js';
@@ -27,9 +32,27 @@ const limiter = rateLimit({
 // Middleware
 app.use(limiter);
 app.use(express.json());
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+}));
+
+// Loosen CSP for React to work properly
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            connectSrc: ["'self'", "http://localhost:5000", "https://*"]
+        }
+    },
+    crossOriginEmbedderPolicy: false
+}));
+
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Database
 await connectDB();
@@ -40,9 +63,27 @@ app.use('/api/convert', conversionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
 
-// Base Route
-app.get('/', (req, res) => {
+// Static Files (Frontend)
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+// Base Route (API)
+app.get('/api', (req, res) => {
     res.json({ message: 'Tablify API is running...' });
+});
+
+// API 404 handler
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'API Route Not Found' });
+});
+
+// SPA Fallback - Serve index.html for all non-API routes
+app.use((req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
+        if (err) {
+            res.status(404).json({ error: 'Not Found' });
+        }
+    });
 });
 
 // Error Handling Middleware

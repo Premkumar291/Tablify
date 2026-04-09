@@ -5,6 +5,88 @@ import base64
 import io
 import pandas as pd
 import pdfplumber
+from PIL import Image
+import numpy as np
+
+# Global OCR reader (lazy-loaded to save RAM if not needed)
+_ocr_reader = None
+
+def get_ocr_reader():
+    global _ocr_reader
+    if _ocr_reader is None:
+        import easyocr
+        # Disable GPU if you don't have CUDA installed
+        _ocr_reader = easyocr.Reader(['en'], gpu=False)
+    return _ocr_reader
+
+def extract_tables_from_image(image_bytes):
+    """
+    Extracts table structure from an image using local OCR.
+    Groups text detection results into rows based on the 'y' coordinate.
+    """
+    try:
+        reader = get_ocr_reader()
+        image = Image.open(io.BytesIO(image_bytes))
+        img_np = np.array(image)
+
+        # 1. OCR all text with bounding boxes
+        # result: [[box, text, confidence], ...]
+        results = reader.readtext(img_np)
+
+        if not results:
+            return []
+
+        # 2. Sort by Y coordinate first, then X coordinate
+        # box format: [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
+        data = []
+        for (box, text, prob) in results:
+            y_center = (box[0][1] + box[2][1]) / 2
+            x_center = (box[0][0] + box[1][0]) / 2
+            data.append({'x': x_center, 'y': y_center, 'text': text})
+
+        # 3. Cluster rows based on Y coordinate threshold
+        # We use a dynamic threshold based on the average height of detection boxes
+        data.sort(key=lambda item: item['y'])
+        
+        # Estimate average text height from first few results
+        avg_h = 20
+        if results:
+            heights = [abs(res[0][0][1] - res[0][2][1]) for res in results[:10]]
+            avg_h = sum(heights) / len(heights) if heights else 20
+
+        rows = []
+        if data:
+            current_row = [data[0]]
+            for i in range(1, len(data)):
+                # If the difference in Y is small (within ~70% of text height), it's the same row
+                if abs(data[i]['y'] - current_row[0]['y']) < (avg_h * 0.7): 
+                    current_row.append(data[i])
+                else:
+                    rows.append(current_row)
+                    current_row = [data[i]]
+            rows.append(current_row)
+
+        # 4. Sort each row by X coordinate and convert to list of strings
+        table_data = []
+        for r in rows:
+            r.sort(key=lambda item: item['x'])
+            table_data.append([item['text'] for item in r])
+
+        if not table_data:
+            return []
+
+        # Convert to DataFrame
+        # For simplicity, treat the 1st row as header
+        if len(table_data) > 1:
+            df = pd.DataFrame(table_data[1:], columns=table_data[0], dtype=str)
+        else:
+            df = pd.DataFrame(table_data, dtype=str)
+        
+        return [df]
+    except Exception as e:
+        print(f"DEBUG: OCR Error: {str(e)}", file=sys.stderr)
+        return []
+
 
 def extract_tables_from_pdf(pdf_bytes):
     """
@@ -130,30 +212,30 @@ def extract_tables_from_pdf(pdf_bytes):
                     
     return tables
 
-def process_pdf(data, output_format, mode='tables'):
+def process_file(data, output_format, mode='tables'):
     try:
-        if mode == 'text':
-             # Direct Text Extraction
-             with pdfplumber.open(io.BytesIO(data)) as pdf:
-                text_content = []
-                for page in pdf.pages:
-                    text = page.extract_text()
-                    if text:
-                        text_content.append(text)
-                
-                full_text = "\n\n".join(text_content)
-                
-                return {
-                    "file_content": full_text, 
-                    "content_type": "text/plain",
-                    "filename": "output.txt",
-                    "is_base64": False
-                }
-
-        # Table Extraction Mode (Default)
-        dfs = extract_tables_from_pdf(data)
+        # 1. Detect if it's a PDF or Image
+        is_pdf = data.startswith(b'%PDF-')
+        
+        dfs = []
+        if is_pdf:
+            if mode == 'text':
+                with pdfplumber.open(io.BytesIO(data)) as pdf:
+                    text_content = [p.extract_text() for p in pdf.pages if p.extract_text()]
+                    return {
+                        "file_content": "\n\n".join(text_content), 
+                        "content_type": "text/plain",
+                        "filename": "output.txt",
+                        "is_base64": False
+                    }
+            dfs = extract_tables_from_pdf(data)
+        else:
+            # Try Image processing via OCR
+            dfs = extract_tables_from_image(data)
         
         if not dfs:
+            # Final fallback: text extraction from PDF if no tables found
+            if is_pdf and output_format == 'text':
              if output_format == 'text':
                 # Fallback: Extract raw text if no tables found and user asked for text
                  with pdfplumber.open(io.BytesIO(data)) as pdf:
@@ -239,7 +321,7 @@ if __name__ == "__main__":
             raise ValueError("No input data")
 
         # Process
-        result = process_pdf(input_data, args.format, args.mode)
+        result = process_file(input_data, args.format, args.mode)
         
         # Output JSON to stdout
         print(json.dumps(result))
