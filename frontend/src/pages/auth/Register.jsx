@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -8,6 +8,7 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const Register = () => {
     const { register } = useAuth();
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
@@ -21,6 +22,7 @@ const Register = () => {
         setError('');
         try {
             await register(email, password, name);
+            navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || 'Registration failed');
         } finally {
